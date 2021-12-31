@@ -111,5 +111,30 @@ namespace GCodeSequencer
         {
             ComPort.Write(listBox1.SelectedItem.ToString() + '\n');
         }
+
+        private void btn_start_Click(object sender, EventArgs e)
+        {
+            timer1.Start();
+        }
+
+        private void btn_stop_Click(object sender, EventArgs e)
+        {
+            timer1.Stop();
+        }
+
+        int i = 0;
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            
+            if (i >= listBox1.Items.Count - 1)
+            {
+                i = 1;
+            }
+            listBox1.SelectedIndex = i;
+            ComPort.Write(listBox1.SelectedItem.ToString() + '\n');
+            i++;
+            
+            
+        }
     }
 }
