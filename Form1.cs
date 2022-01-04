@@ -11,6 +11,8 @@ using System.IO.Ports;
 using System.Security;
 using System.IO;
 
+
+
 namespace GCodeSequencer
 {
     public partial class Form1 : Form
@@ -67,6 +69,7 @@ namespace GCodeSequencer
                 {
                     btn_connect.Text = "Disconnect";
                     groupBox1.Enabled = false;
+                    groupBox2.Enabled = true;
                 }
             }
             else
@@ -74,6 +77,7 @@ namespace GCodeSequencer
                 ComPort.Close();
                 btn_connect.Text = "Connect";
                 groupBox1.Enabled = true;
+                groupBox2.Enabled = false;
             }
 
         }
@@ -89,6 +93,9 @@ namespace GCodeSequencer
 
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
+                lbl_file.Text = Path.GetFileName(openFileDialog1.FileName);
+                listBox1.Items.Clear(); //delete all items if a new file is loaded
+
                 try
                 {
                     var sr = new StreamReader(openFileDialog1.FileName);
@@ -112,29 +119,62 @@ namespace GCodeSequencer
             ComPort.Write(listBox1.SelectedItem.ToString() + '\n');
         }
 
+        Queue<string> GCommands = new Queue<string>();
         private void btn_start_Click(object sender, EventArgs e)
         {
+            ushort N_loops = 1;
+
+            timer1.Interval = (int)num_timer.Value;
+
+            if(check_loop.Checked)
+            {
+                N_loops = (ushort)num_loops.Value;
+            }
+            for(ushort index1 = 0; index1 <= N_loops - 1; index1++)
+            { 
+                for (int index2 = 0; index2 <= listBox1.Items.Count - 1; index2++)
+                {
+                    listBox1.SelectedIndex = index2;
+                    GCommands.Enqueue(listBox1.SelectedItem.ToString() + '\n');
+                }
+            }
+            listBox1.SelectedIndex = 0;
             timer1.Start();
         }
 
-        private void btn_stop_Click(object sender, EventArgs e)
+        private void btn_Pause_Click(object sender, EventArgs e)
         {
             timer1.Stop();
         }
+        private void btn_resumeTimer_Click(object sender, EventArgs e)
+        {
+            timer1.Start();
+        }
+        private void btn_stop_Click(object sender, EventArgs e)
+        {
+            timer1.Stop();
+            GCommands.Clear();            
+        }
 
-        int i = 0;
         private void timer1_Tick(object sender, EventArgs e)
         {
-            
-            if (i >= listBox1.Items.Count - 1)
+            if(GCommands.Count == 0)
             {
-                i = 1;
+                timer1.Stop();
             }
-            listBox1.SelectedIndex = i;
-            ComPort.Write(listBox1.SelectedItem.ToString() + '\n');
-            i++;
-            
-            
+
+            ComPort.Write(GCommands.Dequeue());
+
+        }        
+
+        private void btn_delHeader_Click(object sender, EventArgs e)
+        {
+            if(listBox1.Items.Count != 0)
+            {
+                listBox1.Items.RemoveAt(0);
+            }
         }
+
+        
     }
 }
